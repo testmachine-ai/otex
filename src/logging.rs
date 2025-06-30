@@ -8,16 +8,20 @@ pub(crate) fn init_logging(logger: Option<Box<dyn log::Log>>) -> sdk::logs::SdkL
         .with_http()
         .build()
         .expect("failed to build exporter");
-    let stdout_exporter = opentelemetry_stdout::LogExporter::default();
 
     if let Some(logger) = logger {
         log::set_boxed_logger(logger).expect("failed to set global logger");
     }
 
-    sdk::logs::LoggerProviderBuilder::default()
-        .with_batch_exporter(exporter)
-        .with_batch_exporter(stdout_exporter)
-        .build()
+    let mut builder = sdk::logs::LoggerProviderBuilder::default().with_batch_exporter(exporter);
+
+    #[cfg(feature = "stdout")]
+    {
+        let stdout_exporter = opentelemetry_stdout::LogExporter::default();
+        builder = builder.with_batch_exporter(stdout_exporter);
+    }
+
+    builder.build()
 }
 
 pub(crate) fn create_log_record(
@@ -131,10 +135,15 @@ mod test {
 
         let otex = crate::init(Some(Box::new(logger)));
 
-        let span = crate::span!("test", value="attach").attach();
+        let span = crate::span!("test", value = "attach").attach();
 
-        crate::event!("test", attr="name");
-        crate::log!("test log", opentelemetry::logs::Severity::Error, "error!", test_key="hello");
+        crate::event!("test", attr = "name");
+        crate::log!(
+            "test log",
+            opentelemetry::logs::Severity::Error,
+            "error!",
+            test_key = "hello"
+        );
 
         otex.shutdown();
     }

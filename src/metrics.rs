@@ -5,12 +5,17 @@ pub(crate) fn init_metrics() -> sdk::metrics::SdkMeterProvider {
         .with_http()
         .build()
         .expect("failed to build exporter");
-    let stdout_exporter = opentelemetry_stdout::MetricExporter::default();
 
-    sdk::metrics::MeterProviderBuilder::default()
-        .with_periodic_exporter(exporter)
-        .with_periodic_exporter(stdout_exporter)
-        .build()
+    let builder = sdk::metrics::MeterProviderBuilder::default()
+        .with_periodic_exporter(exporter);
+
+    #[cfg(feature = "stdout")]
+    {
+        let stdout_exporter = opentelemetry_stdout::MetricExporter::default();
+        builder = builder.with_periodic_exporter(stdout_exporter);
+    }
+
+    builder.build()
 }
 
 #[cfg(test)]

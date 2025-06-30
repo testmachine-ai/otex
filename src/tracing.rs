@@ -6,15 +6,23 @@ pub(crate) fn init_tracing() -> sdk::trace::SdkTracerProvider {
         .with_http()
         .build()
         .expect("failed to build exporter");
-    let stdout_exporter = opentelemetry_stdout::SpanExporter::default();
-    sdk::trace::TracerProviderBuilder::default()
-        .with_batch_exporter(exporter)
-        .with_batch_exporter(stdout_exporter)
-        .build()
+
+    let builder = sdk::trace::TracerProviderBuilder::default().with_batch_exporter(exporter);
+
+    #[cfg(feature = "stdout")]
+    {
+        let stdout_exporter = opentelemetry_stdout::SpanExporter::default();
+        builder = builder.with_batch_exporter(stdout_exporter);
+    }
+
+    builder.build()
 }
 
 /// Creates a new span with the current context as its parent
-pub(crate) fn new_span(name: &str, attributes: &[opentelemetry::KeyValue]) -> opentelemetry::Context {
+pub(crate) fn new_span(
+    name: &str,
+    attributes: &[opentelemetry::KeyValue],
+) -> opentelemetry::Context {
     let tracer = crate::init::tracer();
     let span_builder = tracer
         .span_builder(name.to_string())
