@@ -7,7 +7,7 @@ pub(crate) fn init_tracing() -> sdk::trace::SdkTracerProvider {
         .build()
         .expect("failed to build exporter");
 
-    let builder = sdk::trace::TracerProviderBuilder::default().with_batch_exporter(exporter);
+    let mut builder = sdk::trace::TracerProviderBuilder::default().with_batch_exporter(exporter);
 
     #[cfg(feature = "stdout")]
     {

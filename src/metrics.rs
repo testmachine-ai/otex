@@ -6,7 +6,7 @@ pub(crate) fn init_metrics() -> sdk::metrics::SdkMeterProvider {
         .build()
         .expect("failed to build exporter");
 
-    let builder = sdk::metrics::MeterProviderBuilder::default()
+    let mut builder = sdk::metrics::MeterProviderBuilder::default()
         .with_periodic_exporter(exporter);
 
     #[cfg(feature = "stdout")]
