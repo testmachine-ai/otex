@@ -1,13 +1,17 @@
 use opentelemetry_sdk::{self as sdk};
 
 pub(crate) fn init_metrics() -> sdk::metrics::SdkMeterProvider {
-    let exporter = opentelemetry_otlp::MetricExporterBuilder::new()
-        .with_http()
-        .build()
-        .expect("failed to build exporter");
+    let mut builder = sdk::metrics::MeterProviderBuilder::default();
 
-    let mut builder = sdk::metrics::MeterProviderBuilder::default()
-        .with_periodic_exporter(exporter);
+    #[cfg(not(feature = "stdout"))]
+    {
+        let exporter = opentelemetry_otlp::MetricExporterBuilder::new()
+            .with_http()
+            .build()
+            .expect("failed to build exporter");
+
+        builder = builder.with_periodic_exporter(exporter);
+    }
 
     #[cfg(feature = "stdout")]
     {

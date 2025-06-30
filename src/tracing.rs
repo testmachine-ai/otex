@@ -2,12 +2,17 @@ use opentelemetry::trace::{TraceContextExt, Tracer};
 use opentelemetry_sdk as sdk;
 
 pub(crate) fn init_tracing() -> sdk::trace::SdkTracerProvider {
-    let exporter = opentelemetry_otlp::SpanExporterBuilder::default()
-        .with_http()
-        .build()
-        .expect("failed to build exporter");
+    let mut builder = sdk::trace::TracerProviderBuilder::default();
 
-    let mut builder = sdk::trace::TracerProviderBuilder::default().with_batch_exporter(exporter);
+    #[cfg(not(feature = "stdout"))]
+    {
+        let exporter = opentelemetry_otlp::SpanExporterBuilder::default()
+            .with_http()
+            .build()
+            .expect("failed to build exporter");
+
+        builder = builder.with_batch_exporter(exporter);
+    }
 
     #[cfg(feature = "stdout")]
     {
