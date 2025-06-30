@@ -24,7 +24,7 @@ pub(crate) fn init_tracing() -> sdk::trace::SdkTracerProvider {
 }
 
 /// Creates a new span with the current context as its parent
-pub(crate) fn new_span(
+pub fn new_span(
     name: &str,
     attributes: &[opentelemetry::KeyValue],
 ) -> opentelemetry::Context {
@@ -36,7 +36,7 @@ pub(crate) fn new_span(
     opentelemetry::Context::current_with_span(span)
 }
 
-pub(crate) fn new_event(name: &str, attributes: &[opentelemetry::KeyValue]) {
+pub fn new_event(name: &str, attributes: &[opentelemetry::KeyValue]) {
     let context = opentelemetry::Context::current();
     context
         .span()

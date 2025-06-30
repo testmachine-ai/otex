@@ -29,7 +29,7 @@ pub(crate) fn init_logging(logger: Option<Box<dyn log::Log>>) -> sdk::logs::SdkL
     builder.build()
 }
 
-pub(crate) fn create_log_record(
+pub fn create_log_record(
     severity: opentelemetry::logs::Severity,
     module_path: &'static str,
     name: Option<&'static str>,

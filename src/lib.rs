@@ -111,3 +111,6 @@ pub(crate) mod init {
 }
 
 pub use init::{init, meter};
+
+pub use logging::create_log_record;
+pub use tracing::{new_span, new_event};
