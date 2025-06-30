@@ -2,5 +2,21 @@
 name = "otex"
 version = "0.1.0"
 edition = "2024"
+authors = ["Eric Bogard <ebo@testmachine.ai>"]
+description = "Macros and minimal wrappers over the opentelemetry api."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/testmachine-ai/otex"
+readme = "README.md"
+categories = ["opentelemetry", "logging"]
+keywords = ["tooling", "opentelemetry", "logging"]
 
 [dependencies]
+env_logger = "0.11.8"
+lazy_static = "1.5.0"
+log = { version = "0.4.27", features = ["kv", "std"] }
+opentelemetry = "0.30.0"
+opentelemetry-otlp = "0.30.0"
+opentelemetry-stdout = "0.30.0"
+opentelemetry_sdk = "0.30.0"
+tokio = { version = "1.45.1", features = ["macros", "rt"] }
+
