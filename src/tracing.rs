@@ -26,12 +26,15 @@ pub(crate) fn init_tracing() -> sdk::trace::SdkTracerProvider {
 /// Creates a new span with the current context as its parent
 pub fn new_span(
     name: &str,
+    kind: opentelemetry::trace::SpanKind,
     attributes: &[opentelemetry::KeyValue],
 ) -> opentelemetry::Context {
     let tracer = crate::init::tracer();
     let span_builder = tracer
         .span_builder(name.to_string())
         .with_attributes(attributes.to_owned());
+
+
     let span = tracer.build(span_builder);
     opentelemetry::Context::current_with_span(span)
 }
@@ -43,20 +46,29 @@ pub fn new_event(name: &str, attributes: &[opentelemetry::KeyValue]) {
         .add_event(name.to_string(), attributes.to_vec());
 }
 
+pub fn new_error_event(name: &str, description: &str, attributes: &[opentelemetry::KeyValue]) {
+    let context = opentelemetry::Context::current();
+    context
+        .span()
+        .add_event(name.to_string(), attributes.to_vec());
+
+    context.span().set_status(opentelemetry::trace::Status::error(description.to_string()));
+}
+
 #[cfg(test)]
 mod test {
 
-    use crate::{FutureExt, event, span};
+    use crate::{FutureExt, event, context};
 
     #[test]
     fn span_macro() {
         let otex = crate::init(None);
         {
-            let parent = span!("hello", test_attr = "value");
+            let parent = context!("hello", crate::trace::SpanKind::Internal, test_attr = "value");
             event!("parent event");
 
             let child_attr = 123;
-            let mut child = span!("world", child_attr);
+            let mut child = context!("world", crate::trace::SpanKind::Internal, child_attr);
 
             event!("child event");
         }
@@ -67,11 +79,11 @@ mod test {
     async fn async_span() {
         let otex = crate::init(None);
         {
-            let _parent = span!("hello", test_attr = "value").attach();
+            let _parent = context!("hello", crate::trace::SpanKind::Internal, test_attr = "value").attach();
             event!("parent event");
 
             let child_attr = 123;
-            let child = span!("world", child_attr);
+            let child = context!("world", crate::trace::SpanKind::Internal, child_attr);
 
             let task = async {
                 event!("child event", child_name = "childevent");

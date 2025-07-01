@@ -2,17 +2,17 @@
 #[macro_export]
 macro_rules! kvset {
     // key = value form
-    ($( $attr_key:ident = $attr_value:expr ),+ $(,)?) => {{
-        use opentelemetry::KeyValue;
-        &[
+    ($( $attr_key:tt = $attr_value:expr ),+ $(,)?) => {{
+        use $crate::KeyValue;
+        [
             $( KeyValue::new(stringify!($attr_key), $attr_value) ),*
         ]
     }};
 
     // shorthand: just ident
     ($( $attr:ident ),+ $(,)?) => {{
-        use opentelemetry::KeyValue;
-        &[
+        use $crate::KeyValue;
+        [
             $( KeyValue::new(stringify!($attr), $attr) ),*
         ]
     }};
@@ -21,17 +21,17 @@ macro_rules! kvset {
 #[macro_export]
 macro_rules! anykvset {
     // key = value form
-    ($( $attr_key:ident = $attr_value:expr ),+ $(,)?) => {{
-        use opentelemetry::{Key, logs::AnyValue};
-        &[
+    ($( $attr_key:tt = $attr_value:expr ),+ $(,)?) => {{
+        use $crate::{Key, logs::AnyValue};
+        [
             $( (Key::new(stringify!($attr_key)), AnyValue::from($attr_value)) ),*
         ]
     }};
 
     // shorthand: just ident
     ($( $attr:ident ),+ $(,)?) => {{
-        use opentelemetry::{Key, logs::AnyValue};
-        &[
+        use $crate::{Key, logs::AnyValue};
+        [
             $( (Key::new(stringify!($attr)), AnyValue::from($attr)) ),*
         ]
     }};
@@ -41,19 +41,19 @@ macro_rules! anykvset {
 macro_rules! log {
     // No attributes
     ($name:expr, $severity:expr, $body:expr) => {{
-        $crate::logging::create_log_record($severity, module_path!(), $name, Some($body.into()), &[])
+        $crate::create_log_record($severity, module_path!(), $name, Some($body.into()), &[])
     }};
 
     // key = value form
-    ($name:expr, $severity:expr, $body:expr, $( $attr_key:ident = $attr_value:expr ),+ $(,)?) => {{
+    ($name:expr, $severity:expr, $body:expr, $( $attr_key:tt = $attr_value:expr ),+ $(,)?) => {{
         let attrs = $crate::anykvset!($( $attr_key = $attr_value ),*);
-        $crate::logging::create_log_record($severity, module_path!(), $name, Some($body.into()), attrs)
+        $crate::create_log_record($severity, module_path!(), $name, Some($body.into()), &attrs)
     }};
 
     // shorthand: ident only
     ($name:expr, $severity:expr, $body:expr, $( $attr:ident ),+ $(,)?) => {{
         let attrs = $crate::anykvset!($( $attr ),*);
-        $crate::logging::create_log_record($severity, module_path!(), $name, Some($body.into()), attrs)
+        $crate::create_log_record($severity, module_path!(), $name, Some($body.into()), &attrs)
     }};
 }
 #[macro_export]
@@ -61,31 +61,31 @@ macro_rules! error_log {
 
     // anonymous forms
     ($body:expr) => {{
-        $crate::log!(None, opentelemetry::logs::Severity::Error, $body);
+        $crate::log!(None, $crate::logs::Severity::Error, $body);
     }};
 
     // key = value form
-    ($body:expr, $( $attr_key:ident = $attr_value:expr ),+ $(,)?) => {{
-        $crate::log!(None, opentelemetry::logs::Severity::Error, $body, $( $attr_key = $attr_value ),*);
+    ($body:expr, $( $attr_key:tt = $attr_value:expr ),+ $(,)?) => {{
+        $crate::log!(None, $crate::logs::Severity::Error, $body, $( $attr_key = $attr_value ),*);
     }};
 
     // shorthand: ident only
     ($body:expr, $( $attr:ident ),+ $(,)?) => {{
-        $crate::log!(None, opentelemetry::logs::Severity::Error, $body, $( $attr ),*);
+        $crate::log!(None, $crate::logs::Severity::Error, $body, $( $attr ),*);
     }};
     // No attributes
     ($name:expr, $body:expr) => {{
-        $crate::log!(Some($name), opentelemetry::logs::Severity::Error, $body);
+        $crate::log!(Some($name), $crate::logs::Severity::Error, $body);
     }};
 
     // key = value form
-    ($name:expr, $body:expr, $( $attr_key:ident = $attr_value:expr ),+ $(,)?) => {{
-        $crate::log!(Some($name), opentelemetry::logs::Severity::Error, $body, $( $attr_key = $attr_value ),*);
+    ($name:expr, $body:expr, $( $attr_key:tt = $attr_value:expr ),+ $(,)?) => {{
+        $crate::log!(Some($name), $crate::logs::Severity::Error, $body, $( $attr_key = $attr_value ),*);
     }};
 
     // shorthand: ident only
     ($name:expr, $body:expr, $( $attr:ident ),+ $(,)?) => {{
-        $crate::log!(Some($name), opentelemetry::logs::Severity::Error, $body, $( $attr ),*);
+        $crate::log!(Some($name), $crate::logs::Severity::Error, $body, $( $attr ),*);
     }};
 
 }
@@ -94,32 +94,32 @@ macro_rules! error_log {
 macro_rules! warn_log {
     // anonymous forms
     ($body:expr) => {{
-        $crate::log!(None, opentelemetry::logs::Severity::Warn, $body);
+        $crate::log!(None, $crate::logs::Severity::Warn, $body);
     }};
 
     // key = value form
-    ($body:expr, $( $attr_key:ident = $attr_value:expr ),+ $(,)?) => {{
-        $crate::log!(None, opentelemetry::logs::Severity::Warn, $body, $( $attr_key = $attr_value ),*);
+    ($body:expr, $( $attr_key:tt = $attr_value:expr ),+ $(,)?) => {{
+        $crate::log!(None, $crate::logs::Severity::Warn, $body, $( $attr_key = $attr_value ),*);
     }};
 
     // shorthand: ident only
     ($body:expr, $( $attr:ident ),+ $(,)?) => {{
-        $crate::log!(None, opentelemetry::logs::Severity::Warn, $body, $( $attr ),*);
+        $crate::log!(None, $crate::logs::Severity::Warn, $body, $( $attr ),*);
     }};
 
     // No attributes
     ($name:expr, $body:expr) => {{
-        $crate::log!(Some($name), opentelemetry::logs::Severity::Warn, $body);
+        $crate::log!(Some($name), $crate::logs::Severity::Warn, $body);
     }};
 
     // key = value form
-    ($name:expr, $body:expr, $( $attr_key:ident = $attr_value:expr ),+ $(,)?) => {{
-        $crate::log!(Some($name), opentelemetry::logs::Severity::Warn, $body, $( $attr_key = $attr_value ),*);
+    ($name:expr, $body:expr, $( $attr_key:tt = $attr_value:expr ),+ $(,)?) => {{
+        $crate::log!(Some($name), $crate::logs::Severity::Warn, $body, $( $attr_key = $attr_value ),*);
     }};
 
     // shorthand: ident only
     ($name:expr, $body:expr, $( $attr:ident ),+ $(,)?) => {{
-        $crate::log!(Some($name), opentelemetry::logs::Severity::Warn, $body, $( $attr ),*);
+        $crate::log!(Some($name), $crate::logs::Severity::Warn, $body, $( $attr ),*);
     }};
 
 }
@@ -128,32 +128,32 @@ macro_rules! warn_log {
 macro_rules! info_log {
     // anonymous forms
     ($body:expr) => {{
-        $crate::log!(None, opentelemetry::logs::Severity::Info, $body);
+        $crate::log!(None, $crate::logs::Severity::Info, $body);
     }};
 
     // key = value form
-    ($body:expr, $( $attr_key:ident = $attr_value:expr ),+ $(,)?) => {{
-        $crate::log!(None, opentelemetry::logs::Severity::Info, $body, $( $attr_key = $attr_value ),*);
+    ($body:expr, $( $attr_key:tt = $attr_value:expr ),+ $(,)?) => {{
+        $crate::log!(None, $crate::logs::Severity::Info, $body, $( $attr_key = $attr_value ),*);
     }};
 
     // shorthand: ident only
     ($body:expr, $( $attr:ident ),+ $(,)?) => {{
-        $crate::log!(None, opentelemetry::logs::Severity::Info, $body, $( $attr ),*);
+        $crate::log!(None, $crate::logs::Severity::Info, $body, $( $attr ),*);
     }};
 
     // No attributes
     ($name:expr, $body:expr) => {{
-        $crate::log!(Some($name), opentelemetry::logs::Severity::Info, $body);
+        $crate::log!(Some($name), $crate::logs::Severity::Info, $body);
     }};
 
     // key = value form
-    ($name:expr, $body:expr, $( $attr_key:ident = $attr_value:expr ),+ $(,)?) => {{
-        $crate::log!(Some($name), opentelemetry::logs::Severity::Info, $body, $( $attr_key = $attr_value ),*);
+    ($name:expr, $body:expr, $( $attr_key:tt = $attr_value:expr ),+ $(,)?) => {{
+        $crate::log!(Some($name), $crate::logs::Severity::Info, $body, $( $attr_key = $attr_value ),*);
     }};
 
     // shorthand: ident only
     ($name:expr, $body:expr, $( $attr:ident ),+ $(,)?) => {{
-        $crate::log!(Some($name), opentelemetry::logs::Severity::Info, $body, $( $attr ),*);
+        $crate::log!(Some($name), $crate::logs::Severity::Info, $body, $( $attr ),*);
     }};
 }
 
@@ -161,32 +161,32 @@ macro_rules! info_log {
 macro_rules! debug_log {
     // anonymous forms
     ($body:expr) => {{
-        $crate::log!(None, opentelemetry::logs::Severity::Debug, $body);
+        $crate::log!(None, $crate::logs::Severity::Debug, $body);
     }};
 
     // key = value form
-    ($body:expr, $( $attr_key:ident = $attr_value:expr ),+ $(,)?) => {{
-        $crate::log!(None, opentelemetry::logs::Severity::Debug, $body, $( $attr_key = $attr_value ),*);
+    ($body:expr, $( $attr_key:tt = $attr_value:expr ),+ $(,)?) => {{
+        $crate::log!(None, $crate::logs::Severity::Debug, $body, $( $attr_key = $attr_value ),*);
     }};
 
     // shorthand: ident only
     ($body:expr, $( $attr:ident ),+ $(,)?) => {{
-        $crate::log!(None, opentelemetry::logs::Severity::Debug, $body, $( $attr ),*);
+        $crate::log!(None, $crate::logs::Severity::Debug, $body, $( $attr ),*);
     }};
 
     // No attributes
     ($name:expr, $body:expr) => {{
-        $crate::log!(Some($name), opentelemetry::logs::Severity::Debug, $body);
+        $crate::log!(Some($name), $crate::logs::Severity::Debug, $body);
     }};
 
     // key = value form
-    ($name:expr, $body:expr, $( $attr_key:ident = $attr_value:expr ),+ $(,)?) => {{
-        $crate::log!(Some($name), opentelemetry::logs::Severity::Debug, $body, $( $attr_key = $attr_value ),*);
+    ($name:expr, $body:expr, $( $attr_key:tt = $attr_value:expr ),+ $(,)?) => {{
+        $crate::log!(Some($name), $crate::logs::Severity::Debug, $body, $( $attr_key = $attr_value ),*);
     }};
 
     // shorthand: ident only
     ($name:expr, $body:expr, $( $attr:ident ),+ $(,)?) => {{
-        $crate::log!(Some($name), opentelemetry::logs::Severity::Debug, $body, $( $attr ),*);
+        $crate::log!(Some($name), $crate::logs::Severity::Debug, $body, $( $attr ),*);
     }};
 }
 
@@ -194,32 +194,32 @@ macro_rules! debug_log {
 macro_rules! trace_log {
     // anonymous forms
     ($body:expr) => {{
-        $crate::log!(None, opentelemetry::logs::Severity::Trace, $body);
+        $crate::log!(None, $crate::logs::Severity::Trace, $body);
     }};
 
     // key = value form
-    ($body:expr, $( $attr_key:ident = $attr_value:expr ),+ $(,)?) => {{
-        $crate::log!(None, opentelemetry::logs::Severity::Trace, $body, $( $attr_key = $attr_value ),*);
+    ($body:expr, $( $attr_key:tt = $attr_value:expr ),+ $(,)?) => {{
+        $crate::log!(None, $crate::logs::Severity::Trace, $body, $( $attr_key = $attr_value ),*);
     }};
 
     // shorthand: ident only
     ($body:expr, $( $attr:ident ),+ $(,)?) => {{
-        $crate::log!(None, opentelemetry::logs::Severity::Trace, $body, $( $attr ),*);
+        $crate::log!(None, $crate::logs::Severity::Trace, $body, $( $attr ),*);
     }};
 
     // No attributes
     ($name:expr, $body:expr) => {{
-        $crate::log!(Some($name), opentelemetry::logs::Severity::Trace, $body);
+        $crate::log!(Some($name), $crate::logs::Severity::Trace, $body);
     }};
 
     // key = value form
-    ($name:expr, $body:expr, $( $attr_key:ident = $attr_value:expr ),+ $(,)?) => {{
-        $crate::log!(Some($name), opentelemetry::logs::Severity::Trace, $body, $( $attr_key = $attr_value ),*);
+    ($name:expr, $body:expr, $( $attr_key:tt = $attr_value:expr ),+ $(,)?) => {{
+        $crate::log!(Some($name), $crate::logs::Severity::Trace, $body, $( $attr_key = $attr_value ),*);
     }};
 
     // shorthand: ident only
     ($name:expr, $body:expr, $( $attr:ident ),+ $(,)?) => {{
-        $crate::log!(Some($name), opentelemetry::logs::Severity::Trace, $body, $( $attr ),*);
+        $crate::log!(Some($name), $crate::logs::Severity::Trace, $body, $( $attr ),*);
     }};
 }
 
@@ -228,45 +228,75 @@ macro_rules! trace_log {
 macro_rules! event {
     // No attributes
     ($name:expr) => {{
-        use $crate::tracing::new_event;
-        new_event($name, &[])
+        $crate::new_event($name, &[])
     }};
 
     // key = value form
-    ($name:expr, $( $attr_key:ident = $attr_value:expr ),+ $(,)?) => {{
-        use $crate::{kvset, tracing::new_event};
-        let attrs = kvset!($( $attr_key = $attr_value ),*);
-        new_event($name, attrs)
+    ($name:expr, $( $attr_key:tt = $attr_value:expr ),+ $(,)?) => {{
+        let attrs = $crate::kvset!($( $attr_key = $attr_value ),*);
+        $crate::new_event($name, &attrs)
     }};
 
     // shorthand: ident only
     ($name:expr, $( $attr:ident ),+ $(,)?) => {{
-        use $crate::{kvset, tracing::new_event};
-        let attrs = kvset!($( $attr ),*);
-        new_event($name, attrs)
+        let attrs = $crate::kvset!($( $attr ),*);
+        $crate::new_event($name, &attrs)
     }};
 }
 
 #[macro_export]
-macro_rules! span {
+macro_rules! error_event {
     // No attributes
-    ($name:expr) => {{
-        use $crate::tracing::new_span;
-        new_span($name, &[])
+    ($name:expr, $desc:expr) => {{
+        $crate::new_error_event($name, $desc &[])
     }};
 
     // key = value form
-    ($name:expr, $( $attr_key:ident = $attr_value:expr ),+ $(,)?) => {{
-        use $crate::{kvset, tracing::new_span};
-        let attrs = kvset!($( $attr_key = $attr_value ),*);
-        new_span($name, attrs)
+    ($name:expr, $desc:expr, $( $attr_key:tt = $attr_value:expr ),+ $(,)?) => {{
+        let attrs = $crate::kvset!($( $attr_key = $attr_value ),*);
+        $crate::new_error_event($name, &attrs)
+    }};
+
+    // shorthand: ident only
+    ($name:expr, $desc:expr, $( $attr:ident ),+ $(,)?) => {{
+        let attrs = $crate::kvset!($( $attr ),*);
+        $crate::new_error_event($name, &attrs)
+    }};
+}
+
+#[macro_export]
+macro_rules! context {
+    // No attributes
+    ($name:expr) => {{
+        $crate::new_span($name, $crate::trace::SpanKind::Internal, &[])
+    }};
+
+    // key = value form
+    ($name:expr, $( $attr_key:tt = $attr_value:expr ),+ $(,)?) => {{
+        let attrs = $crate::kvset!($( $attr_key = $attr_value ),*);
+        $crate::new_span($name, $crate::trace::SpanKind::Internal, &attrs)
     }};
 
     // shorthand: ident only
     ($name:expr, $( $attr:ident ),+ $(,)?) => {{
-        use $crate::{kvset, tracing::new_span};
-        let attrs = kvset!($( $attr ),*);
-        new_span($name, attrs)
+        let attrs = $crate::kvset!($( $attr ),*);
+        $crate::new_span($name, $crate::trace::SpanKind::Internal, &attrs)
+    }};
+    // No attributes
+    ($name:expr, $kind:expr) => {{
+        $crate::new_span($name, $kind, &[])
+    }};
+
+    // key = value form
+    ($name:expr, $kind:expr, $( $attr_key:tt = $attr_value:expr ),+ $(,)?) => {{
+        let attrs = $crate::kvset!($( $attr_key = $attr_value ),*);
+        $crate::new_span($name, $kind, &attrs)
+    }};
+
+    // shorthand: ident only
+    ($name:expr, $kind:expr, $( $attr:tt ),+ $(,)?) => {{
+        let attrs = $crate::kvset!($( $attr ),*);
+        $crate::new_span($name, $kind, &attrs)
     }};
 }
 
@@ -342,30 +372,30 @@ mod tests {
     fn test_base_log_macro_syntax() {
         // Test base log macro with no attributes
         let _test1 = || {
-            log!(Some("test_log"), opentelemetry::logs::Severity::Info, "message");
+            log!(Some("test_log"), crate::logs::Severity::Info, "message");
         };
         let _test2 = || {
-            log!(None, opentelemetry::logs::Severity::Error, "error occurred");
+            log!(None, crate::logs::Severity::Error, "error occurred");
         };
         
         // Test base log macro with key = value attributes
         let _test3 = || {
-            log!(Some("user_action"), opentelemetry::logs::Severity::Info, "action performed", user_id = 123, action = "login");
+            log!(Some("user_action"), crate::logs::Severity::Info, "action performed", user_id = 123, action = "login");
         };
         
         // Test base log macro with shorthand attributes
         let _test4 = || {
             let user_id = 456;
             let session_id = "session123";
-            log!(Some("session_log"), opentelemetry::logs::Severity::Debug, "session info", user_id, session_id);
+            log!(Some("session_log"), crate::logs::Severity::Debug, "session info", user_id, session_id);
         };
         
         // Test with different severity levels
         let _test5 = || {
-            log!(None, opentelemetry::logs::Severity::Trace, "trace message", component = "auth");
+            log!(None, crate::logs::Severity::Trace, "trace message", component = "auth");
         };
         let _test6 = || {
-            log!(Some("warning"), opentelemetry::logs::Severity::Warn, "warning message", level = "high");
+            log!(Some("warning"), crate::logs::Severity::Warn, "warning message", level = "high");
         };
     }
 
@@ -575,46 +605,46 @@ mod tests {
     fn test_span_macro_syntax() {
         // Test span macro with no attributes
         let _test1 = || {
-            span!("http_request");
+            context!("http_request");
         };
         let _test2 = || {
-            span!("database_query");
+            context!("database_query");
         };
         
         // Test span macro with key = value attributes
         let _test3 = || {
-            span!("api_request", method = "GET", endpoint = "/users", version = "v1");
+            context!("api_request", method = "GET", endpoint = "/users", version = "v1");
         };
         let _test4 = || {
-            span!("db_transaction", table = "orders", operation = "INSERT", isolation = "READ_COMMITTED");
+            context!("db_transaction", table = "orders", operation = "INSERT", isolation = "READ_COMMITTED");
         };
         
         // Test span macro with shorthand attributes
         let _test5 = || {
             let method = "POST";
             let status_code = 201;
-            span!("http_response", method, status_code);
+            context!("http_response", method, status_code);
         };
         let _test6 = || {
             let service = "payment";
             let provider = "stripe";
             let amount = 99.99;
-            span!("payment_processing", service, provider, amount);
+            context!("payment_processing", service, provider, amount);
         };
         
         // Test with mixed attribute styles - separate calls since mixing styles isn't supported
         let _test7a = || {
-            span!("user_operation", operation_type = "update", timestamp = 1234567890);
+            context!("user_operation", operation_type = "update", timestamp = 1234567890);
         };
         let _test7b = || {
             let user_id = 456;
             let authenticated = true;
-            span!("user_operation", user_id, authenticated);
+            context!("user_operation", user_id, authenticated);
         };
         
         // Test with trailing comma
         let _test8 = || {
-            span!("test_span", attr1 = "value1", attr2 = 42,);
+            context!("test_span", attr1 = "value1", attr2 = 42,);
         };
     }
 

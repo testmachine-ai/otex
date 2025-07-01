@@ -140,7 +140,7 @@ mod test {
 
         let otex = crate::init(Some(Box::new(logger)));
 
-        let span = crate::span!("test", value = "attach").attach();
+        let span = crate::context!("test", value = "attach").attach();
 
         crate::event!("test", attr = "name");
         crate::log!(

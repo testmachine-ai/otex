@@ -42,7 +42,7 @@ mod tests {
                 .build();
 
             let attributes = crate::kvset!(testas = 100);
-            hist.record(5, attributes);
+            hist.record(5, &attributes);
 
             counter.add(1, &[]);
         }

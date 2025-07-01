@@ -1,6 +1,6 @@
 mod logging;
 mod macros;
-mod metrics;
+mod metric;
 mod tracing;
 
 pub use opentelemetry::trace::FutureExt;
@@ -17,7 +17,6 @@ pub(crate) mod init {
 
     const APPLICATION_NAME: &str = "otex";
     lazy_static! {
-
         pub static ref TRACER_PROVIDER: OnceLock<sdk::trace::SdkTracerProvider> = OnceLock::new();
         pub static ref LOGGER_PROVIDER: OnceLock<sdk::logs::SdkLoggerProvider> = OnceLock::new();
         pub static ref METER_PROVIDER: OnceLock<sdk::metrics::SdkMeterProvider> = OnceLock::new();
@@ -76,7 +75,7 @@ pub(crate) mod init {
             .set(log_provider)
             .expect("failed to set logger provider");
 
-        let meter_provider = crate::metrics::init_metrics();
+        let meter_provider = crate::metric::init_metrics();
         crate::init::METER_PROVIDER
             .set(meter_provider)
             .expect("failed to set logger provider");
@@ -110,7 +109,9 @@ pub(crate) mod init {
     }
 }
 
-pub use init::{init, meter};
+pub use init::{init, meter, tracer, logger};
 
 pub use logging::create_log_record;
 pub use tracing::{new_span, new_event};
+
+pub use opentelemetry::{*};
