@@ -1,6 +1,14 @@
 // GENERAL
 #[macro_export]
 macro_rules! kvset {
+    // dot-separated key = value form (e.g., work_order.request_id = value)
+    ($( $($attr_key_part:ident).+ = $attr_value:expr ),+ $(,)?) => {{
+        use $crate::KeyValue;
+        [
+            $( KeyValue::new(stringify!($($attr_key_part).+), $attr_value) ),*
+        ]
+    }};
+
     // key = value form
     ($( $attr_key:tt = $attr_value:expr ),+ $(,)?) => {{
         use $crate::KeyValue;
@@ -20,6 +28,14 @@ macro_rules! kvset {
 
 #[macro_export]
 macro_rules! anykvset {
+    // dot-separated key = value form (e.g., work_order.request_id = value)
+    ($( $($attr_key_part:ident).+ = $attr_value:expr ),+ $(,)?) => {{
+        use $crate::{Key, logs::AnyValue};
+        [
+            $( (Key::new(stringify!($($attr_key_part).+)), AnyValue::from($attr_value)) ),*
+        ]
+    }};
+
     // key = value form
     ($( $attr_key:tt = $attr_value:expr ),+ $(,)?) => {{
         use $crate::{Key, logs::AnyValue};
@@ -333,6 +349,17 @@ mod tests {
         let _test5 = || {
             kvset!(name = "test", id = 1,);
         };
+
+        // Test kvset with dot-separated keys
+        let _test6 = || {
+            kvset!(work_order.request_id = "12345", user.profile.name = "John");
+        };
+        let _test7 = || {
+            kvset!(service.api.version = "v2", database.connection.timeout = 30);
+        };
+        let _test8 = || {
+            kvset!(app.config.debug = true, metrics.counter.requests = 100,);
+        };
     }
 
     #[test]
@@ -365,6 +392,17 @@ mod tests {
         // Test anykvset with trailing comma
         let _test5 = || {
             anykvset!(key = "value", num = 42,);
+        };
+
+        // Test anykvset with dot-separated keys
+        let _test6 = || {
+            anykvset!(work_order.request_id = "67890", event.source.system = "billing");
+        };
+        let _test7 = || {
+            anykvset!(trace.span.id = "abc123", log.level.severity = "warn");
+        };
+        let _test8 = || {
+            anykvset!(http.request.method = "POST", response.status.code = 201,);
         };
     }
 
