@@ -1,4 +1,4 @@
-use std::{fmt::Arguments, panic::Location};
+use std::{env, fmt::Arguments, panic::Location};
 
 use opentelemetry::logs::{LogRecord, Logger};
 use opentelemetry_sdk::{self as sdk};
@@ -12,12 +12,20 @@ pub(crate) fn init_logging(logger: Option<Box<dyn log::Log>>) -> sdk::logs::SdkL
 
     #[cfg(not(feature = "stdout"))]
     {
-        let exporter = opentelemetry_otlp::LogExporterBuilder::default()
-            .with_http()
-            .build()
-            .expect("failed to build exporter");
+        let log_exporting_disabled: bool = std::env::var("LOG_EXPORTING_DISABLED")
+            .map(|s| s.to_lowercase())
+            .unwrap_or("false".to_string())
+            .parse()
+            .unwrap_or(false);
 
-        builder = builder.with_batch_exporter(exporter);
+        if !log_exporting_disabled {
+            let exporter = opentelemetry_otlp::LogExporterBuilder::default()
+                .with_http()
+                .build()
+                .expect("failed to build exporter");
+
+            builder = builder.with_batch_exporter(exporter);
+        }
     }
 
     #[cfg(feature = "stdout")]
@@ -160,16 +168,9 @@ mod test {
 
         let otex = crate::init(Some(Box::new(logger)));
 
-        crate::info_log!(
-            "test log",
-            "test!"
-        );
+        crate::info_log!("test log", "test!");
 
-        crate::info_log!(
-            "test log",
-            "test!",
-            key=1
-        );
+        crate::info_log!("test log", "test!", key = 1);
 
         crate::info_log!("test!");
 
