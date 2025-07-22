@@ -1,8 +1,8 @@
 [package]
 name = "otex"
-version = "0.1.7"
+version = "0.1.8"
 edition = "2024"
-authors = ["Eric Bogard <ebo@testmachine.ai>"]
+authors = ["Eric Bogard <ebo@testmachine.ai>", "Oliver Hill <ohh@testmachine.ai>"]
 description = "Macros and minimal wrappers over the opentelemetry api."
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/testmachine-ai/otex"

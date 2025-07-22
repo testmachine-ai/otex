@@ -60,6 +60,7 @@ pub fn create_log_record(
     record.add_attributes(attributes.to_owned());
 
     record.set_severity_number(severity);
+    record.set_severity_text(severity.name());
 
     // Emit otel record
     logger.emit(record);
