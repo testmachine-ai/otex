@@ -4,8 +4,13 @@ use opentelemetry_sdk as sdk;
 pub(crate) fn init_tracing() -> sdk::trace::SdkTracerProvider {
     let mut builder = sdk::trace::TracerProviderBuilder::default();
 
-    #[cfg(not(feature = "stdout"))]
-    {
+    let export_enabled: bool = std::env::var("OTEX_EXPORT")
+        .map(|s| s.to_lowercase())
+        .unwrap_or("true".to_string())
+        .parse()
+        .unwrap_or(true);
+
+    if export_enabled {
         let exporter = opentelemetry_otlp::SpanExporterBuilder::default()
             .with_http()
             .build()
@@ -62,7 +67,7 @@ mod test {
 
     #[test]
     fn span_macro() {
-        let otex = crate::init(None);
+        let otex = crate::init();
         {
             let parent = context!("hello", crate::trace::SpanKind::Internal, test_attr = "value");
             event!("parent event");
@@ -77,7 +82,7 @@ mod test {
 
     #[tokio::test]
     async fn async_span() {
-        let otex = crate::init(None);
+        let otex = crate::init();
         {
             let _parent = context!("hello", crate::trace::SpanKind::Internal, test_attr = "value").attach();
             event!("parent event");

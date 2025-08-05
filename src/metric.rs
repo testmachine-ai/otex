@@ -3,8 +3,13 @@ use opentelemetry_sdk::{self as sdk};
 pub(crate) fn init_metrics() -> sdk::metrics::SdkMeterProvider {
     let mut builder = sdk::metrics::MeterProviderBuilder::default();
 
-    #[cfg(not(feature = "stdout"))]
-    {
+    let export_enabled: bool = std::env::var("OTEX_EXPORT")
+        .map(|s| s.to_lowercase())
+        .unwrap_or("true".to_string())
+        .parse()
+        .unwrap_or(true);
+
+    if export_enabled {
         let exporter = opentelemetry_otlp::MetricExporterBuilder::new()
             .with_http()
             .build()
@@ -26,7 +31,7 @@ pub(crate) fn init_metrics() -> sdk::metrics::SdkMeterProvider {
 mod tests {
     #[test]
     fn test_meter() {
-        let otex = crate::init(None);
+        let otex = crate::init();
 
         {
             let meter = crate::init::meter();

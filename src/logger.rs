@@ -3,29 +3,22 @@ use std::{env, fmt::Arguments, panic::Location};
 use opentelemetry::logs::{LogRecord, Logger};
 use opentelemetry_sdk::{self as sdk};
 
-pub(crate) fn init_logging(logger: Option<Box<dyn log::Log>>) -> sdk::logs::SdkLoggerProvider {
-    if let Some(logger) = logger {
-        log::set_boxed_logger(logger).expect("failed to set global logger");
-    }
-
+pub(crate) fn init_logging() -> sdk::logs::SdkLoggerProvider {
     let mut builder = sdk::logs::LoggerProviderBuilder::default();
 
-    #[cfg(not(feature = "stdout"))]
-    {
-        let log_exporting_disabled: bool = std::env::var("LOG_EXPORTING_DISABLED")
-            .map(|s| s.to_lowercase())
-            .unwrap_or("false".to_string())
-            .parse()
-            .unwrap_or(false);
+    let export_enabled: bool = std::env::var("OTEX_EXPORT")
+        .map(|s| s.to_lowercase())
+        .unwrap_or("true".to_string())
+        .parse()
+        .unwrap_or(true);
 
-        if !log_exporting_disabled {
-            let exporter = opentelemetry_otlp::LogExporterBuilder::default()
-                .with_http()
-                .build()
-                .expect("failed to build exporter");
+    if export_enabled {
+        let exporter = opentelemetry_otlp::LogExporterBuilder::default()
+            .with_http()
+            .build()
+            .expect("failed to build exporter");
 
-            builder = builder.with_batch_exporter(exporter);
-        }
+        builder = builder.with_batch_exporter(exporter);
     }
 
     #[cfg(feature = "stdout")]
@@ -133,8 +126,8 @@ fn emit_log_impl_record<'a>(
     };
 
     log_builder.level(log_level);
+    log_builder.args(*arguments);
 
-    log_builder.args(*arguments); // Borrow is safe — body_str lives long enough
     let log_record = log_builder.build();
     log::logger().log(&log_record);
 }
@@ -147,7 +140,9 @@ mod test {
         let logger = env_logger::Builder::from_default_env().build();
         log::set_max_level(logger.filter());
 
-        let otex = crate::init(Some(Box::new(logger)));
+        log::set_boxed_logger(Box::new(logger));
+
+        let otex = crate::init();
 
         let span = crate::context!("test", value = "attach").attach();
 
@@ -166,8 +161,9 @@ mod test {
     fn test_info() {
         let logger = env_logger::Builder::from_default_env().build();
         log::set_max_level(logger.filter());
+        log::set_boxed_logger(Box::new(logger));
 
-        let otex = crate::init(Some(Box::new(logger)));
+        let otex = crate::init();
 
         crate::info_log!("test log", "test!");
 

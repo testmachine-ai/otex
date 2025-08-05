@@ -1,9 +1,17 @@
-mod logging;
+mod logger;
 mod macros;
 mod metric;
-mod tracing;
+mod tracer;
+mod keyvalue;
 
 pub use opentelemetry::trace::FutureExt;
+
+pub use init::{init, meter, tracer, logger};
+
+pub use logger::create_log_record;
+pub use tracer::{new_span, new_event};
+
+pub use opentelemetry::{*};
 
 pub(crate) mod init {
 
@@ -64,13 +72,13 @@ pub(crate) mod init {
         }
     }
 
-    pub fn init(log_impl: Option<Box<dyn log::Log>>) -> Otex {
-        let trace_provider = crate::tracing::init_tracing();
+    pub fn init() -> Otex {
+        let trace_provider = crate::tracer::init_tracing();
         crate::init::TRACER_PROVIDER
             .set(trace_provider)
             .expect("failed to set tracer provider");
 
-        let log_provider = crate::logging::init_logging(log_impl);
+        let log_provider = crate::logger::init_logging();
         crate::init::LOGGER_PROVIDER
             .set(log_provider)
             .expect("failed to set logger provider");
@@ -109,9 +117,3 @@ pub(crate) mod init {
     }
 }
 
-pub use init::{init, meter, tracer, logger};
-
-pub use logging::create_log_record;
-pub use tracing::{new_span, new_event};
-
-pub use opentelemetry::{*};
