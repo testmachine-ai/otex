@@ -6,7 +6,7 @@ mod keyvalue;
 
 pub use opentelemetry::trace::FutureExt;
 
-pub use init::{init, meter, tracer, logger};
+pub use init::{init, shutdown, meter, tracer, logger};
 
 pub use logger::create_log_record;
 pub use tracer::{new_span, new_event};
