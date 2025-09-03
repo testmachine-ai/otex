@@ -30,49 +30,7 @@ pub(crate) mod init {
         pub static ref METER_PROVIDER: OnceLock<sdk::metrics::SdkMeterProvider> = OnceLock::new();
     }
 
-    pub struct Otex;
-
-    impl Otex {
-        pub fn shutdown(&self) {
-            opentelemetry::context::Context::current().span().end();
-            // Flush otel traces
-            let tracer_provider = TRACER_PROVIDER.get().unwrap();
-            let _ = tracer_provider.force_flush().inspect_err(|e| {
-                log::error!("{}", e)
-            });
-            tracer_provider
-                .shutdown()
-                .expect("shutdown errors");
-
-
-            // Flush otel logs
-            let logger_provider = LOGGER_PROVIDER.get().unwrap();
-            let _ = logger_provider.force_flush().inspect_err(|e| {
-                log::error!("{}", e)
-            });
-            logger_provider
-                .shutdown()
-                .expect("shutdown errors");
-
-
-
-            // Flush log implementation
-            log::logger().flush();
-
-
-            // Flush otel metrics
-            let meter_provider = METER_PROVIDER.get().unwrap();
-            let _ = meter_provider.force_flush().inspect_err(|e| {
-                log::error!("{}", e)
-            });
-            meter_provider
-                .shutdown()
-                .expect("shutdown errors");
-
-        }
-    }
-
-    pub fn init() -> Otex {
+    pub fn init() {
         let trace_provider = crate::tracer::init_tracing();
         crate::init::TRACER_PROVIDER
             .set(trace_provider)
@@ -87,9 +45,46 @@ pub(crate) mod init {
         crate::init::METER_PROVIDER
             .set(meter_provider)
             .expect("failed to set logger provider");
-
-        Otex
     }
+
+    pub fn shutdown() {
+        opentelemetry::context::Context::current().span().end();
+        // Flush otel traces
+        let tracer_provider = TRACER_PROVIDER.get().unwrap();
+        let _ = tracer_provider.force_flush().inspect_err(|e| {
+            log::error!("{}", e)
+        });
+        tracer_provider
+            .shutdown()
+            .expect("shutdown errors");
+
+
+        // Flush otel logs
+        let logger_provider = LOGGER_PROVIDER.get().unwrap();
+        let _ = logger_provider.force_flush().inspect_err(|e| {
+            log::error!("{}", e)
+        });
+        logger_provider
+            .shutdown()
+            .expect("shutdown errors");
+
+
+
+        // Flush log implementation
+        log::logger().flush();
+
+
+        // Flush otel metrics
+        let meter_provider = METER_PROVIDER.get().unwrap();
+        let _ = meter_provider.force_flush().inspect_err(|e| {
+            log::error!("{}", e)
+        });
+        meter_provider
+            .shutdown()
+            .expect("shutdown errors");
+
+    }
+
 
     pub fn app_name() -> &'static str {
         APPLICATION_NAME
