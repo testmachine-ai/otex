@@ -37,11 +37,48 @@ pub fn new_span(
     let tracer = crate::init::tracer();
     let span_builder = tracer
         .span_builder(name.to_string())
+        .with_kind(kind)
         .with_attributes(attributes.to_owned());
-
 
     let span = tracer.build(span_builder);
     opentelemetry::Context::current_with_span(span)
+}
+
+/// Creates a new span with an explicit parent context.
+///
+/// Use this when you need to continue a trace from an incoming request's
+/// trace context (e.g., from W3C traceparent header).
+///
+/// # Arguments
+/// * `name` - The name of the span
+/// * `kind` - The kind of span (Server, Client, Internal, etc.)
+/// * `attributes` - Initial attributes for the span
+/// * `parent_context` - The parent context to use (e.g., from extract_context_from_headers)
+///
+/// # Example
+/// ```ignore
+/// let parent_ctx = otex::propagation::extract_context_from_headers(headers);
+/// let ctx = otex::new_span_with_parent(
+///     "http_request",
+///     opentelemetry::trace::SpanKind::Server,
+///     &[],
+///     parent_ctx,
+/// );
+/// ```
+pub fn new_span_with_parent(
+    name: &str,
+    kind: opentelemetry::trace::SpanKind,
+    attributes: &[opentelemetry::KeyValue],
+    parent_context: opentelemetry::Context,
+) -> opentelemetry::Context {
+    let tracer = crate::init::tracer();
+    let span_builder = tracer
+        .span_builder(name.to_string())
+        .with_kind(kind)
+        .with_attributes(attributes.to_owned());
+
+    let span = tracer.build_with_context(span_builder, &parent_context);
+    parent_context.with_span(span)
 }
 
 pub fn new_event(name: &str, attributes: &[opentelemetry::KeyValue]) {
