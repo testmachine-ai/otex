@@ -12,7 +12,7 @@ pub(crate) fn init_tracing() -> sdk::trace::SdkTracerProvider {
 
     if export_enabled {
         let exporter = opentelemetry_otlp::SpanExporterBuilder::default()
-            .with_http()
+            .with_tonic()
             .build()
             .expect("failed to build exporter");
 

@@ -14,7 +14,7 @@ pub(crate) fn init_logging() -> sdk::logs::SdkLoggerProvider {
 
     if export_enabled {
         let exporter = opentelemetry_otlp::LogExporterBuilder::default()
-            .with_http()
+            .with_tonic()
             .build()
             .expect("failed to build exporter");
 
