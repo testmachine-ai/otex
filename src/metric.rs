@@ -11,7 +11,7 @@ pub(crate) fn init_metrics() -> sdk::metrics::SdkMeterProvider {
 
     if export_enabled {
         let exporter = opentelemetry_otlp::MetricExporterBuilder::new()
-            .with_tonic()
+            .with_http()
             .build()
             .expect("failed to build exporter");
 
