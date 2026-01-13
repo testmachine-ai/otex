@@ -9,6 +9,10 @@ use opentelemetry::{
     Context,
 };
 
+// Re-export opentelemetry propagation types for consumers
+pub use opentelemetry::propagation::{Extractor, Injector, TextMapPropagator};
+pub use opentelemetry::propagation::text_map_propagator;
+
 /// Extract trace context from HTTP headers.
 ///
 /// Parses the `traceparent` header according to W3C Trace Context specification.

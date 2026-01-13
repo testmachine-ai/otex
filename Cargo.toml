@@ -1,6 +1,6 @@
 [package]
 name = "otex"
-version = "0.4.1"
+version = "0.4.2"
 edition = "2024"
 authors = ["Eric Bogard <ebo@testmachine.ai>", "Oliver Hill <ohh@testmachine.ai>"]
 description = "Macros and minimal wrappers over the opentelemetry api."
