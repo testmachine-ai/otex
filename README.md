@@ -35,11 +35,27 @@ event!("processing_started", item_count = 42);
 ### Logging
 
 ```rust
-use otex::log;
-use opentelemetry::logs::Severity;
+use otex::{actionable_log, logs::Severity, schema::Outcome};
 
-log!("user_action", Severity::Info, "User performed action", user_id = 123);
+actionable_log!(
+    "queue.job.succeeded",
+    Severity::Info,
+    Outcome::Succeeded,
+    "Job completed",
+    job.id = job_id,
+);
 ```
+
+`actionable_log!` emits [actionable log schema v1](docs/actionable-log-schema-v1.md),
+with a [language-neutral JSON Schema](schema/actionable-log-v1.schema.json) for adapters.
+Existing named records gain a searchable `event.name` without being marked as v1;
+anonymous log macros remain available as a compatibility path for legacy records.
+
+Production application events use OTLP only (`OTEX_EXPORT=true`, the default).
+`otex` does not mirror those records through the Rust `log` facade. For local
+development only, compile with the `stdout` feature and set `OTEX_EXPORT=false`;
+the stdout exporters are disabled whenever OTLP export is enabled, so the same
+normal event is never emitted on both paths.
 
 ### Key-Value Helpers
 
@@ -51,7 +67,7 @@ let attributes = kvset!(name = "test", value = 42, enabled = true);
 
 ## Features
 
-- **stdout**: Enable stdout exporters for development/debugging
+- **stdout**: Enable non-production stdout exporters when `OTEX_EXPORT=false`
 
 ## License
 

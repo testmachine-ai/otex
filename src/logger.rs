@@ -1,16 +1,12 @@
-use std::{env, fmt::Arguments, panic::Location};
-
 use opentelemetry::logs::{LogRecord, Logger};
 use opentelemetry_sdk::{self as sdk};
+
+use crate::schema::{self, Outcome};
 
 pub(crate) fn init_logging() -> sdk::logs::SdkLoggerProvider {
     let mut builder = sdk::logs::LoggerProviderBuilder::default();
 
-    let export_enabled: bool = std::env::var("OTEX_EXPORT")
-        .map(|s| s.to_lowercase())
-        .unwrap_or("true".to_string())
-        .parse()
-        .unwrap_or(true);
+    let export_enabled = crate::export::otlp_enabled();
 
     if export_enabled {
         let exporter = opentelemetry_otlp::LogExporterBuilder::default()
@@ -22,7 +18,7 @@ pub(crate) fn init_logging() -> sdk::logs::SdkLoggerProvider {
     }
 
     #[cfg(feature = "stdout")]
-    {
+    if !export_enabled {
         let stdout_exporter = opentelemetry_stdout::LogExporter::default();
         builder = builder.with_batch_exporter(stdout_exporter);
     }
@@ -32,104 +28,79 @@ pub(crate) fn init_logging() -> sdk::logs::SdkLoggerProvider {
 
 pub fn create_log_record(
     severity: opentelemetry::logs::Severity,
-    module_path: &'static str,
+    _module_path: &'static str,
     name: Option<&'static str>,
     body: Option<opentelemetry::logs::AnyValue>,
     attributes: &[(opentelemetry::Key, opentelemetry::logs::AnyValue)],
 ) {
     let logger = crate::init::logger();
 
-    let location = Location::caller();
     let mut record = logger.create_log_record();
+
+    let mut record_attributes = Vec::with_capacity(attributes.len() + 1);
 
     if let Some(name) = name {
         record.set_event_name(name);
+        record_attributes.push((
+            opentelemetry::Key::new(schema::keys::EVENT_NAME),
+            opentelemetry::logs::AnyValue::String(name.into()),
+        ));
     }
 
     if let Some(body) = &body {
         record.set_body(body.clone());
     }
 
-    record.add_attributes(attributes.to_owned());
+    record_attributes.extend(attributes.iter().filter_map(|(key, value)| {
+        let owned_by_library = name.is_some() && key.as_str() == schema::keys::EVENT_NAME;
+        (!owned_by_library).then(|| (key.clone(), value.clone()))
+    }));
+    record.add_attributes(record_attributes.clone());
 
     record.set_severity_number(severity);
     record.set_severity_text(severity.name());
 
     // Emit otel record
     logger.emit(record);
-
-    // Emit log impl record
-    let log_attributes = attributes
-        .iter()
-        .map(|(key, value)| {
-            (
-                log::kv::Key::from_str(key.as_str()),
-                log::kv::Value::from_debug(value),
-            )
-        })
-        .collect::<Vec<(_, _)>>();
-
-    if let Some(body) = body.as_ref() {
-        use opentelemetry::logs::AnyValue;
-        let formatted_body = match body {
-            AnyValue::Int(i) => format!("{}", i),
-            AnyValue::Double(d) => format!("{}", d),
-            AnyValue::String(string_value) => format!("{}", string_value),
-            AnyValue::Boolean(b) => format!("{}", b),
-            AnyValue::Bytes(vec) => format!("{:?}", vec),
-            AnyValue::ListAny(list) => format!("{:?}", list),
-            AnyValue::Map(map) => format!("{:?}", map),
-            _ => todo!(),
-        };
-        emit_log_impl_record(
-            severity,
-            module_path,
-            location,
-            &log_attributes,
-            &format_args!("{}", formatted_body),
-        );
-    }
 }
 
-fn emit_log_impl_record<'a>(
+/// Emit a schema-v1 actionable event.
+///
+/// The event name must be a stable, low-cardinality identifier. Human-readable
+/// detail belongs in `body`; queryable context belongs in `attributes`.
+#[track_caller]
+pub fn create_actionable_log_record(
     severity: opentelemetry::logs::Severity,
     module_path: &'static str,
-    location: &'a Location<'a>,
-    attributes: &'a [(log::kv::Key, log::kv::Value)],
-    arguments: &'a Arguments<'a>,
+    name: &'static str,
+    outcome: Outcome,
+    body: Option<opentelemetry::logs::AnyValue>,
+    attributes: &[(opentelemetry::Key, opentelemetry::logs::AnyValue)],
 ) {
-    // Emit log impl record
-    let mut log_builder = log::RecordBuilder::new();
-    log_builder
-        .module_path(Some(module_path))
-        .file(Some(location.file()))
-        .line(Some(location.line()));
+    let mut actionable_attributes = Vec::with_capacity(attributes.len() + 2);
+    actionable_attributes.push((
+        opentelemetry::Key::new(schema::keys::SCHEMA_VERSION),
+        opentelemetry::logs::AnyValue::Int(schema::VERSION),
+    ));
+    actionable_attributes.push((
+        opentelemetry::Key::new(schema::keys::EVENT_OUTCOME),
+        opentelemetry::logs::AnyValue::String(outcome.as_str().into()),
+    ));
+    actionable_attributes.extend(attributes.iter().filter_map(|(key, value)| {
+        (!matches!(
+            key.as_str(),
+            schema::keys::SCHEMA_VERSION | schema::keys::EVENT_OUTCOME
+        ))
+        .then(|| (key.clone(), value.clone()))
+    }));
 
-    log_builder.key_values(&attributes);
-
-    use opentelemetry::logs::Severity;
-    let log_level = match severity {
-        Severity::Trace | Severity::Trace2 | Severity::Trace3 | Severity::Trace4 => {
-            log::Level::Trace
-        }
-        Severity::Debug | Severity::Debug2 | Severity::Debug3 | Severity::Debug4 => {
-            log::Level::Debug
-        }
-        Severity::Info | Severity::Info2 | Severity::Info3 | Severity::Info4 => log::Level::Info,
-        Severity::Warn | Severity::Warn2 | Severity::Warn3 | Severity::Warn4 => log::Level::Warn,
-        Severity::Error | Severity::Error2 | Severity::Error3 | Severity::Error4 => {
-            log::Level::Error
-        }
-        Severity::Fatal | Severity::Fatal2 | Severity::Fatal3 | Severity::Fatal4 => {
-            log::Level::Error
-        }
-    };
-
-    log_builder.level(log_level);
-    log_builder.args(*arguments);
-
-    let log_record = log_builder.build();
-    log::logger().log(&log_record);
+    create_log_record(
+        severity,
+        module_path,
+        Some(name),
+        body,
+        &actionable_attributes,
+    );
 }
 
 #[cfg(test)]

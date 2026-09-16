@@ -4,11 +4,7 @@ use opentelemetry_sdk as sdk;
 pub(crate) fn init_tracing() -> sdk::trace::SdkTracerProvider {
     let mut builder = sdk::trace::TracerProviderBuilder::default();
 
-    let export_enabled: bool = std::env::var("OTEX_EXPORT")
-        .map(|s| s.to_lowercase())
-        .unwrap_or("true".to_string())
-        .parse()
-        .unwrap_or(true);
+    let export_enabled = crate::export::otlp_enabled();
 
     if export_enabled {
         let exporter = opentelemetry_otlp::SpanExporterBuilder::default()
@@ -20,7 +16,7 @@ pub(crate) fn init_tracing() -> sdk::trace::SdkTracerProvider {
     }
 
     #[cfg(feature = "stdout")]
-    {
+    if !export_enabled {
         let stdout_exporter = opentelemetry_stdout::SpanExporter::default();
         builder = builder.with_batch_exporter(stdout_exporter);
     }

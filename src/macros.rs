@@ -72,6 +72,37 @@ macro_rules! log {
         $crate::create_log_record($severity, module_path!(), $name, Some($body.into()), &attrs)
     }};
 }
+
+/// Emit a versioned actionable log event.
+///
+/// Event names are stable dotted identifiers such as `queue.job.failed`.
+/// Outcomes come from [`schema::Outcome`](crate::schema::Outcome). Attributes
+/// may use dotted OpenTelemetry-style keys.
+#[macro_export]
+macro_rules! actionable_log {
+    ($name:literal, $severity:expr, $outcome:expr, $body:expr) => {{
+        $crate::create_actionable_log_record(
+            $severity,
+            module_path!(),
+            $name,
+            $outcome,
+            Some($body.into()),
+            &[],
+        )
+    }};
+
+    ($name:literal, $severity:expr, $outcome:expr, $body:expr, $( $($attr_key_part:ident).+ = $attr_value:expr ),+ $(,)?) => {{
+        let attrs = $crate::anykvset!($( $($attr_key_part).+ = $attr_value ),*);
+        $crate::create_actionable_log_record(
+            $severity,
+            module_path!(),
+            $name,
+            $outcome,
+            Some($body.into()),
+            &attrs,
+        )
+    }};
+}
 #[macro_export]
 macro_rules! error_log {
 

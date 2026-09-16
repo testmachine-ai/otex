@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/testmachine-ai/otex/blob/main/schema/actionable-log-v1.schema.json",
+  "title": "TestMachine actionable log event v1",
+  "description": "Logical projection of an actionable OTLP log event. Intrinsic OTLP fields and attributes are flattened for cross-language adapter validation.",
+  "type": "object",
+  "required": [
+    "timestamp",
+    "severity_text",
+    "body",
+    "log.schema.version",
+    "log.transport",
+    "event.name",
+    "event.outcome",
+    "service.name"
+  ],
+  "properties": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "severity_text": {
+      "enum": ["TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"]
+    },
+    "body": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024
+    },
+    "log.schema.version": {
+      "const": 1
+    },
+    "log.transport": {
+      "const": "otlp"
+    },
+    "event.name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*){2,}$",
+      "maxLength": 128
+    },
+    "event.outcome": {
+      "enum": [
+        "started",
+        "succeeded",
+        "failed",
+        "degraded",
+        "retried",
+        "skipped",
+        "cancelled"
+      ]
+    },
+    "service.name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "deployment.environment.name": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "service.version": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "trace_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$"
+    },
+    "span_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{16}$"
+    },
+    "error.type": {
+      "enum": [
+        "authentication",
+        "authorization",
+        "validation",
+        "not_found",
+        "conflict",
+        "rate_limited",
+        "timeout",
+        "dependency_unavailable",
+        "connection",
+        "protocol",
+        "data_integrity",
+        "resource_exhausted",
+        "internal",
+        "cancelled",
+        "unknown"
+      ]
+    },
+    "error.retryable": {
+      "type": "boolean"
+    },
+    "diagnostic.action": {
+      "type": "string",
+      "maxLength": 512
+    },
+    "runbook.url": {
+      "type": "string",
+      "format": "uri",
+      "maxLength": 512
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "event.outcome": {
+            "enum": ["failed", "degraded"]
+          }
+        },
+        "required": ["event.outcome"]
+      },
+      "then": {
+        "required": ["error.type", "error.retryable"]
+      }
+    }
+  ],
+  "additionalProperties": true
+}

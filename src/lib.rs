@@ -1,7 +1,9 @@
+mod export;
 mod logger;
 mod macros;
 mod metric;
 pub mod propagation;
+pub mod schema;
 mod tracer;
 mod keyvalue;
 
@@ -9,7 +11,7 @@ pub use opentelemetry::trace::FutureExt;
 
 pub use init::{init, shutdown, meter, tracer, logger};
 
-pub use logger::create_log_record;
+pub use logger::{create_actionable_log_record, create_log_record};
 pub use tracer::{new_span, new_span_with_parent, new_event};
 
 pub use opentelemetry::{*};
@@ -112,4 +114,3 @@ pub(crate) mod init {
             .meter(app_name())
     }
 }
-
